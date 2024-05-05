@@ -7,10 +7,41 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadOnCloudinary, deleteOnCloudinary } from "../utils/cloudinary.js";
 
 const getAllVideos = asyncHandler(async (req, res) => {
-  const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
-  //TODO: get all videos based on query, sort, pagination
-});
+  const { page, limit, query, sortBy, sortType, userId } = req.query;
 
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  const pipeline = [
+    { $match: { owner: new mongoose.Types.ObjectId(userId) } },
+    {
+      $sort: {
+        [sortBy]: parseInt(sortType),
+      },
+    },
+    { $skip: (page - 1) * limit },
+    { $limit: parseInt(limit) },
+  ];
+
+  try {
+    const videosAggregate = await Video.aggregate(pipeline);
+
+    const paginatedVideos = await Video.aggregatePaginate(videosAggregate, {
+      page,
+      limit,
+    });
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, paginatedVideos, "Fetched all videos successfully")
+      );
+  } catch (error) {
+    throw new ApiError(500, error, "Internal Server Error");
+  }
+});
 const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
 
@@ -152,6 +183,26 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
   const { videoId } = req.params;
+
+  if (!isValidObjectId(videoId)) {
+    throw new ApiError(400, "video id is not valid");
+  }
+
+  const video = await Video.findById({
+    _id: videoId,
+  });
+
+  if (!video) {
+    throw new ApiError(404, "video not found");
+  }
+
+  video.isPublished = !video.isPublished;
+
+  await video.save({ validateBeforeSave: false });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, video, "Video toggled successfully!!"));
 });
 
 export {
