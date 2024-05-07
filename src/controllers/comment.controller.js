@@ -55,14 +55,12 @@ const addComment = asyncHandler(async (req, res) => {
   try {
     const { content, videoId, ownerId } = req.body;
 
-    // Create a new comment
     const comment = new Comment({
       content,
       video: videoId,
       owner: ownerId,
     });
 
-    // Save the comment to the database
     const savedComment = await comment.save();
 
     return res
@@ -78,7 +76,6 @@ const updateComment = asyncHandler(async (req, res) => {
     const commentId = req.params.commentId;
     const { content } = req.body;
 
-    // Find the comment by ID and update its content
     const updatedComment = await Comment.findByIdAndUpdate(
       commentId,
       {
@@ -105,7 +102,6 @@ const deleteComment = asyncHandler(async (req, res) => {
   try {
     const commentId = req.params.commentId;
 
-    // Find the comment by ID
     const comment = await Comment.findById(commentId);
     console.log(comment);
 
@@ -113,7 +109,6 @@ const deleteComment = asyncHandler(async (req, res) => {
       throw new ApiError(404, "Comment not found");
     }
 
-    // Delete the comment
     await Comment.deleteOne({ _id: commentId });
 
     return res.status(200).json(new ApiResponse(200, null, "comment deleted"));
