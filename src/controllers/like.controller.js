@@ -65,7 +65,6 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
 
 const getLikedVideos = asyncHandler(async (req, res) => {
   const userId = req.user._id;
-  console.log("userid", userId);
 
   try {
     const likedVideos = await Like.aggregate([
@@ -89,6 +88,7 @@ const getLikedVideos = asyncHandler(async (req, res) => {
           title: "$video.title",
           description: "$video.description",
           url: "$video.videoFile",
+          likedBy: 1,
         },
       },
     ]);
